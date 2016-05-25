@@ -154,7 +154,7 @@ public class Algorithm {
         return beta;
     }
 
-    private static int score(Board board) {
+    public static int score(Board board) {
         List<Board.Stone> stones = board.getBoardStones();
         int score = evalPositions(stones, board.getCurrentPlayer());
         return score;
