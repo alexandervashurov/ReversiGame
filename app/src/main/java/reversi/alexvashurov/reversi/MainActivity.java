@@ -56,17 +56,22 @@ public class MainActivity extends Activity {
             }
         });
 
-//        Button settingsButtom = (Button) findViewById(R.id.button_settings);
-//        settingsButtom.setOnClickListener(new View.OnClickListener() {
-//            @Override
-//            public void onClick(View v) {
-//                try {
-//                }
-//            }
-//        });
+
+        final Button settingsButton = (Button) findViewById(R.id.button_settings);
+        settingsButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Intent i = new Intent(MainActivity.this, SettingsActivity.class);
+                startActivity(i);
+
+                }
+
+
+                });
+
+        };
 
 
     }
 
 
-}

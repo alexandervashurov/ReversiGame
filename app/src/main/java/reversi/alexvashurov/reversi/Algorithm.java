@@ -1,6 +1,7 @@
 package reversi.alexvashurov.reversi;
 
 import android.content.Intent;
+import android.util.Log;
 import android.util.Pair;
 
 import java.util.ArrayList;
@@ -14,7 +15,7 @@ import java.util.List;
 public class Algorithm {
     public final static String TAG = "REVERSI_DEBUG";
 
-    private static final int DEPTH = 6;
+    private static int DEPTH = 7;
 
     private static final int[][] arrayPositionValues = new int[8][8];
 
@@ -37,7 +38,7 @@ public class Algorithm {
         arrayPositionValues[3][0] = 6;
         arrayPositionValues[3][1] = -3;
         arrayPositionValues[3][2] = 4;
-        arrayPositionValues[3][3] = 0;
+        arrayPositionValues[3][3] = 1;
 
         for (int j = 0; j <= 3; j++) {
 
@@ -55,6 +56,10 @@ public class Algorithm {
 
     }
 
+    public static void setDEPTH(int depth) {
+        DEPTH = depth;
+    }
+
     public static Move getBetterMove(Board board) {
 
         Board workBoard = board.clone();
@@ -70,6 +75,8 @@ public class Algorithm {
             int score = alphaBetaMax(Integer.MIN_VALUE, Integer.MAX_VALUE, DEPTH, workBoard);
 
             scoredMoves.add(new Pair<>(score, move));
+
+            Log.i(TAG, "Move " + move.toString() + " Score " + score);
 
             workBoard = originalBoard;
 
@@ -149,12 +156,11 @@ public class Algorithm {
 
     private static int score(Board board) {
         List<Board.Stone> stones = board.getBoardStones();
-        int score = evalPositions(stones,board.getCurrentPlayer());
-        //return (board.getCurrentPlayer() == Board.Player.WHITE) ? score : -score;
+        int score = evalPositions(stones, board.getCurrentPlayer());
         return score;
     }
 
-    private static int evalPositions(List<Board.Stone> stones,Board.Player curentPlayer) {
+    private static int evalPositions(List<Board.Stone> stones, Board.Player curentPlayer) {
         int positionScoreWhite = 0;
         int positionScoreBlack = 0;
         int amountScoreWhite = 0;

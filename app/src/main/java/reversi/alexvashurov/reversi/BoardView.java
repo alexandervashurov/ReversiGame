@@ -20,6 +20,7 @@ import java.util.concurrent.Executors;
 
 public class BoardView extends View {
 
+
     public final static String TAG = "REVERSI_DEBUG";
     private final ExecutorService engineExecutor = Executors.newSingleThreadExecutor();
     private final Runnable engineCalculatingTask = new Runnable() {

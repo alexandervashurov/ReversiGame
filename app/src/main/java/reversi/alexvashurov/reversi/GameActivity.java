@@ -36,6 +36,7 @@ public class GameActivity extends Activity {
         }
 
 
+
     public void showScore(int whiteScore, int blackScore) {
         String text = "Stones: White " + whiteScore + " Black " + blackScore;
         scoreText.setText(text);
