@@ -10,12 +10,66 @@ import java.util.List;
  * Created by AlexVashurov on 24.03.16.
  */
 public class Board implements Cloneable {
-    private final static long LEFT_MASK = -9187201950435737472L;
-    private final static long RIGHT_MASK = 72340172838076673L;
+    private final static String TAG = "REVERSI_DEBUG";
+
+    private final static Shift shiftDown = new Shift() {
+        @Override
+        public long shift(long position) {
+            return position >>> 8;
+        }
+    };
+    private final static Shift shiftDownLeft = new Shift() {
+        @Override
+        public long shift(long position) {
+            long dlShift = position >>> 7;
+            return dlShift & ~RIGHT_MASK;
+        }
+    };
+    private final static Shift shiftDownRight = new Shift() {
+        @Override
+        public long shift(long position) {
+            long drShift = position >>> 9;
+            return drShift & ~LEFT_MASK;
+        }
+    };
+    private final static Shift shiftLeft = new Shift() {
+        @Override
+        public long shift(long position) {
+            long lShift = position << 1;
+            return lShift & ~RIGHT_MASK;
+        }
+    };
+    private final static Shift shiftRight = new Shift() {
+        @Override
+        public long shift(long position) {
+            long rShift = position >>> 1;
+            return rShift & ~LEFT_MASK;
+        }
+    };
+    private final static Shift shiftUp = new Shift() {
+        @Override
+        public long shift(long position) {
+            return position << 8;
+
+        }
+    };
+    private final static Shift shiftUpLeft = new Shift() {
+        @Override
+        public long shift(long position) {
+            long ulShift = position << 9;
+            return ulShift & ~RIGHT_MASK;
+        }
+    };
+    private final static Shift shiftUpRight = new Shift() {
+        @Override
+        public long shift(long position) {
+            long urShift = position << 7L;
+            return urShift & ~LEFT_MASK;
+        }
+    };
     private long blackBoard;
     private long whiteBoard;
     private Player currentPlayer;
-    public final static String TAG = "REVERSI_DEBUG";
 
     private Board(long blackBoard, long whiteBoard) {
         this.whiteBoard = whiteBoard;
@@ -29,13 +83,13 @@ public class Board implements Cloneable {
         this.currentPlayer = currentPlayer;
     }
 
-    @Override
-    protected Board clone(){
-        return new Board(blackBoard, whiteBoard, currentPlayer);
-    }
-
     public static Board initialize() {
         return new Board(68853694464L, 34628173824L);
+    }
+
+    @Override
+    protected Board clone() {
+        return new Board(blackBoard, whiteBoard, currentPlayer);
     }
 
     public Player getCurrentPlayer() {
@@ -74,12 +128,12 @@ public class Board implements Cloneable {
         return stones;
     }
 
-    public int getRank(long position) {
+    private int getRank(long position) {
         int index = Long.numberOfLeadingZeros(position);
         return (index / 8);
     }
 
-    public int getFile(long position) {
+    private int getFile(long position) {
         int index = Long.numberOfLeadingZeros(position);
         return (index % 8);
     }
@@ -135,10 +189,10 @@ public class Board implements Cloneable {
         currentPlayer = changePlayer();
     }
 
-    public void makeMove(Player player, Move move) {
+    private void makeMove(Player player, Move move) {
 
 
-        List<Move> piecesToTurn = new LinkedList<Move>();
+        List<Move> piecesToTurn = new LinkedList<>();
         List<Move> endPoints = getAllPiecesToChange(player, move);
         piecesToTurn.addAll(endPoints);
         for (Move m : piecesToTurn) {
@@ -155,133 +209,34 @@ public class Board implements Cloneable {
 
     public List<Move> getAllPossibleMoves(Player player) {
 
-        List<Move> possibleMoves = new ArrayList<Move>();
-        possibleMoves.addAll(movesDown(player));
-        possibleMoves.addAll(movesDownLeft(player));
-        possibleMoves.addAll(movesDownRight(player));
-        possibleMoves.addAll(movesLeft(player));
-        possibleMoves.addAll(movesRight(player));
-        possibleMoves.addAll(movesUp(player));
-        possibleMoves.addAll(movesUpLeft(player));
-        possibleMoves.addAll(movesUpRight(player));
+        List<Move> possibleMoves = new ArrayList<>();
+        possibleMoves.addAll(moves(player, shiftDown));
+        possibleMoves.addAll(moves(player, shiftDownLeft));
+        possibleMoves.addAll(moves(player, shiftDownRight));
+        possibleMoves.addAll(moves(player, shiftLeft));
+        possibleMoves.addAll(moves(player, shiftRight));
+        possibleMoves.addAll(moves(player, shiftUp));
+        possibleMoves.addAll(moves(player, shiftUpLeft));
+        possibleMoves.addAll(moves(player, shiftUpRight));
 
 
         return possibleMoves;
     }
 
-    private List<Move> movesDown(Player player) {
-        List<Move> downMoves = new LinkedList<Move>();
-
-        long playerBoard = getPlayerBoard(player);
-
-        long enemyBoard = getEnemyBoard(player);
-
-        long potentialMoves = shiftDown(playerBoard) & enemyBoard;
-
-        long emptyBoard = freeSquares();
-
-        while (potentialMoves != 0) {
-
-            long legalMoves = shiftDown(potentialMoves) & emptyBoard;
-
-            downMoves.addAll(getLongCoordinates(legalMoves));
-
-            potentialMoves = shiftDown(potentialMoves) & enemyBoard;
-        }
-
-        return downMoves;
-    }
-
-    private List<Move> movesDownLeft(Player player) {
-        List<Move> downLeftMoves = new LinkedList<Move>();
-        long potentialMoves = shiftDownLeft(getPlayerBoard(player)) & getEnemyBoard(player);
+    private List<Move> moves(Player player, Shift shift) {
+        List<Move> upRightMoves = new LinkedList<>();
+        long potentialMoves = shift.shift(getPlayerBoard(player)) & getEnemyBoard(player);
         long emptyBoard = freeSquares();
         while (potentialMoves != 0) {
-            long legalMoves = shiftDownLeft(potentialMoves) & emptyBoard;
-
-            downLeftMoves.addAll(getLongCoordinates(legalMoves));
-
-            potentialMoves = shiftDownLeft(potentialMoves) & getEnemyBoard(player);
-        }
-        return downLeftMoves;
-    }
-
-    private List<Move> movesDownRight(Player player) {
-        LinkedList<Move> downRightMoves = new LinkedList<Move>();
-
-        long potentialMoves = shiftDownRight(getPlayerBoard(player)) & getEnemyBoard(player);
-        long emptyBoard = freeSquares();
-        while (potentialMoves != 0) {
-            long legalMoves = shiftDownRight(potentialMoves) & emptyBoard;
-            downRightMoves.addAll(getLongCoordinates(legalMoves));
-            potentialMoves = shiftDownRight(potentialMoves) & getEnemyBoard(player);
-        }
-        return downRightMoves;
-    }
-
-    private List<Move> movesLeft(Player player) {
-        List<Move> leftMoves = new LinkedList<Move>();
-        long potentialMoves = shiftLeft(getPlayerBoard(player)) & getEnemyBoard(player);
-        long emptyBoard = freeSquares();
-        while (potentialMoves != 0) {
-            long legalMoves = shiftLeft(potentialMoves) & emptyBoard;
-            leftMoves.addAll(getLongCoordinates(legalMoves));
-            potentialMoves = shiftLeft(potentialMoves) & getEnemyBoard(player);
-
-        }
-        return leftMoves;
-    }
-
-    private List<Move> movesRight(Player player) {
-        List<Move> rightMoves = new LinkedList<Move>();
-        long potentialMoves = shiftRight(getPlayerBoard(player)) & getEnemyBoard(player);
-        long emptyBoard = freeSquares();
-        while (potentialMoves != 0) {
-            long legalMoves = shiftRight(potentialMoves) & emptyBoard;
-            rightMoves.addAll(getLongCoordinates(legalMoves));
-            potentialMoves = shiftRight(potentialMoves) & getEnemyBoard(player);
-        }
-        return rightMoves;
-    }
-
-    private List<Move> movesUp(Player player) {
-        List<Move> upMoves = new LinkedList<Move>();
-        long potentialMoves = shiftUp(getPlayerBoard(player)) & getEnemyBoard(player);
-        long emptyBoard = freeSquares();
-        while (potentialMoves != 0) {
-            long legalMoves = shiftUp(potentialMoves) & emptyBoard;
-            upMoves.addAll(getLongCoordinates(legalMoves));
-            potentialMoves = shiftUp(potentialMoves) & getEnemyBoard(player);
-        }
-        return upMoves;
-    }
-
-    private List<Move> movesUpLeft(Player player) {
-        List<Move> upLeftMoves = new LinkedList<Move>();
-        long potentialMoves = shiftUpLeft(getPlayerBoard(player)) & getEnemyBoard(player);
-        long emptyBoard = freeSquares();
-        while (potentialMoves != 0) {
-            long legalMoves = shiftUpLeft(potentialMoves) & emptyBoard;
-            upLeftMoves.addAll(getLongCoordinates(legalMoves));
-            potentialMoves = shiftUpLeft(potentialMoves) & getEnemyBoard(player);
-        }
-        return upLeftMoves;
-    }
-
-    private List<Move> movesUpRight(Player player) {
-        List<Move> upRightMoves = new LinkedList<Move>();
-        long potentialMoves = shiftUpRight(getPlayerBoard(player)) & getEnemyBoard(player);
-        long emptyBoard = freeSquares();
-        while (potentialMoves != 0) {
-            long legalMoves = shiftUpRight(potentialMoves) & emptyBoard;
+            long legalMoves = shift.shift(potentialMoves) & emptyBoard;
             upRightMoves.addAll(getLongCoordinates(legalMoves));
-            potentialMoves = shiftUpRight(potentialMoves) & getEnemyBoard(player);
+            potentialMoves = shift.shift(potentialMoves) & getEnemyBoard(player);
         }
         return upRightMoves;
     }
 
     private List<Move> getLongCoordinates(long legalMoves) {
-        List<Move> possibleMoves = new ArrayList<Move>();
+        List<Move> possibleMoves = new ArrayList<>();
         while (legalMoves != 0L) {
 
             long move = Long.highestOneBit(legalMoves);
@@ -296,18 +251,18 @@ public class Board implements Cloneable {
         return possibleMoves;
     }
 
-    List<Move> getAllPiecesToChange(Player player, Move moveFrom) {
+    private List<Move> getAllPiecesToChange(Player player, Move moveFrom) {
         List<Move> piecesToChange = new ArrayList<>();
 
 
-        piecesToChange.addAll(getEndPointUpLeft(player, moveFrom));
-        piecesToChange.addAll(getEndPointUp(player, moveFrom));
-        piecesToChange.addAll(getEndPointUpRight(player, moveFrom));
-        piecesToChange.addAll(getEndPointLeft(player, moveFrom));
-        piecesToChange.addAll(getEndPointRight(player, moveFrom));
-        piecesToChange.addAll(getEndPointDownLeft(player, moveFrom));
-        piecesToChange.addAll(getEndPointDown(player, moveFrom));
-        piecesToChange.addAll(getEndPointDownRight(player, moveFrom));
+        piecesToChange.addAll(getEndPoint(player, moveFrom, shiftUpLeft));
+        piecesToChange.addAll(getEndPoint(player, moveFrom, shiftUp));
+        piecesToChange.addAll(getEndPoint(player, moveFrom, shiftUpRight));
+        piecesToChange.addAll(getEndPoint(player, moveFrom, shiftLeft));
+        piecesToChange.addAll(getEndPoint(player, moveFrom, shiftRight));
+        piecesToChange.addAll(getEndPoint(player, moveFrom, shiftDownLeft));
+        piecesToChange.addAll(getEndPoint(player, moveFrom, shiftDown));
+        piecesToChange.addAll(getEndPoint(player, moveFrom, shiftDownRight));
 
 
         return piecesToChange;
@@ -317,9 +272,9 @@ public class Board implements Cloneable {
         return (potentialEndPoint & getPlayerBoard(player)) == potentialEndPoint;
     }
 
-    private List<Move> getEndPointDown(Player color, Move moveFrom) {
+    private List<Move> getEndPoint(Player color, Move moveFrom, Shift shift) {
         long startPoint = moveFrom.getPosition();
-        long potentialEndPoint = shiftDown(startPoint);
+        long potentialEndPoint = shift.shift(startPoint);
 
         List<Move> potential = new ArrayList<>();
 
@@ -328,195 +283,35 @@ public class Board implements Cloneable {
                 return potential;
             }
             if ((potentialEndPoint & doubleBoard()) == 0L)
-                return new ArrayList<Move>();
+                return new ArrayList<>();
 
             potential.add(new Move(potentialEndPoint));
-            potentialEndPoint = shiftDown(potentialEndPoint);
+            potentialEndPoint = shift.shift(potentialEndPoint);
         }
-        return new ArrayList<Move>();
+        return new ArrayList<>();
     }
 
-    private List<Move> getEndPointDownLeft(Player color, Move moveFrom) {
-        long startPoint = moveFrom.getPosition();
-        long potentialEndPoint = shiftDownLeft(startPoint);
-
-        List<Move> potential = new ArrayList<>();
-
-        while (potentialEndPoint != 0) {
-            if (validEndPoint(color, potentialEndPoint)) {
-                return potential;
-            }
-            if ((potentialEndPoint & doubleBoard()) == 0L)
-                return new ArrayList<Move>();
-
-            potential.add(new Move(potentialEndPoint));
-            potentialEndPoint = shiftDownLeft(potentialEndPoint);
-        }
-        return new ArrayList<Move>();
-    }
-
-    private List<Move> getEndPointDownRight(Player color, Move moveFrom) {
-        long startPoint = moveFrom.getPosition();
-        long potentialEndPoint = shiftDownRight(startPoint);
-
-        List<Move> potential = new ArrayList<>();
-
-        while (potentialEndPoint != 0) {
-            if (validEndPoint(color, potentialEndPoint)) {
-                return potential;
-            }
-            if ((potentialEndPoint & doubleBoard()) == 0L)
-                return new ArrayList<Move>();
-
-            potential.add(new Move(potentialEndPoint));
-            potentialEndPoint = shiftDownRight(potentialEndPoint);
-        }
-        return new ArrayList<Move>();
-    }
-
-    private List<Move> getEndPointLeft(Player color, Move moveFrom) {
-        long startPoint = moveFrom.getPosition();
-        long potentialEndPoint = shiftLeft(startPoint);
-
-        List<Move> potential = new ArrayList<>();
-
-        while (potentialEndPoint != 0) {
-            if (validEndPoint(color, potentialEndPoint)) {
-                return potential;
-            }
-            if ((potentialEndPoint & doubleBoard()) == 0L)
-                return new ArrayList<Move>();
-
-            potential.add(new Move(potentialEndPoint));
-            potentialEndPoint = shiftLeft(potentialEndPoint);
-        }
-        return new ArrayList<Move>();
-    }
-
-    private List<Move> getEndPointRight(Player color, Move moveFrom) {
-        long startPoint = moveFrom.getPosition();
-        long potentialEndPoint = shiftRight(startPoint);
-
-        List<Move> potential = new ArrayList<>();
-
-        while (potentialEndPoint != 0) {
-            if (validEndPoint(color, potentialEndPoint)) {
-                return potential;
-            }
-            if ((potentialEndPoint & doubleBoard()) == 0L)
-                return new ArrayList<Move>();
-
-            potential.add(new Move(potentialEndPoint));
-            potentialEndPoint = shiftRight(potentialEndPoint);
-        }
-        return new ArrayList<Move>();
-    }
-
-    private List<Move> getEndPointUp(Player color, Move moveFrom) {
-        long startPoint = moveFrom.getPosition();
-        long potentialEndPoint = shiftUp(startPoint);
-
-        List<Move> potential = new ArrayList<>();
-
-        while (potentialEndPoint != 0) {
-            if (validEndPoint(color, potentialEndPoint)) {
-                return potential;
-            }
-            if ((potentialEndPoint & doubleBoard()) == 0L)
-                return new ArrayList<Move>();
-
-            potential.add(new Move(potentialEndPoint));
-            potentialEndPoint = shiftUp(potentialEndPoint);
-        }
-        return new ArrayList<Move>();
-    }
-
-    private List<Move> getEndPointUpLeft(Player color, Move moveFrom) {
-        long startPoint = moveFrom.getPosition();
-        long potentialEndPoint = shiftUpLeft(startPoint);
-
-        List<Move> potential = new ArrayList<>();
-
-        while (potentialEndPoint != 0) {
-            if (validEndPoint(color, potentialEndPoint)) {
-                return potential;
-            }
-            if ((potentialEndPoint & doubleBoard()) == 0L)
-                return new ArrayList<Move>();
-
-            potential.add(new Move(potentialEndPoint));
-            potentialEndPoint = shiftUpLeft(potentialEndPoint);
-        }
-        return new ArrayList<Move>();
-    }
-
-    private List<Move> getEndPointUpRight(Player color, Move moveFrom) {
-        long startPoint = moveFrom.getPosition();
-        long potentialEndPoint = shiftUpRight(startPoint);
-
-        List<Move> potential = new ArrayList<>();
-
-        while (potentialEndPoint != 0) {
-            if (validEndPoint(color, potentialEndPoint)) {
-                return potential;
-            }
-            if ((potentialEndPoint & doubleBoard()) == 0L)
-                return new ArrayList<Move>();
-
-            potential.add(new Move(potentialEndPoint));
-            potentialEndPoint = shiftUpRight(potentialEndPoint);
-        }
-        return new ArrayList<Move>();
-    }
-
-    private long shiftDown(long position) {
-        return position >>> 8;
-    }
-
-    private long shiftDownLeft(long position) {
-        long dlShift = position >>> 7;
-        return dlShift & ~RIGHT_MASK;
-    }
-
-    private long shiftDownRight(long position) {
-        long drShift = position >>> 9;
-        return drShift & ~LEFT_MASK;
-    }
-
-    private long shiftLeft(long position) {
-        long lShift = position << 1;
-        return lShift & ~RIGHT_MASK;
-    }
-
-    private long shiftRight(long position) {
-        long rShift = position >>> 1;
-        return rShift & ~LEFT_MASK;
-    }
-
-    private long shiftUp(long position) {
-        return position << 8;
-    }
-
-    private long shiftUpLeft(long position) {
-        long ulShift = position << 9;
-        return ulShift & ~RIGHT_MASK;
-    }
-
-    private long shiftUpRight(long position) {
-        long urShift = position << 7L;
-        return urShift & ~LEFT_MASK;
-    }
 
     @Override
     public String toString() {
-        StringBuilder builder = new StringBuilder();
-        builder.append("Black\n");
-        builder.append(Long.toBinaryString(blackBoard));
-        builder.append("\n");
-        builder.append("White\n");
-        builder.append(Long.toBinaryString(whiteBoard));
-        builder.append("\n");
-        return builder.toString();
+        return "Black\n" +
+                Long.toBinaryString(blackBoard) +
+                "\n" +
+                "White\n" +
+                Long.toBinaryString(whiteBoard) +
+                "\n";
+    }
+
+    public void changeCurrentPlayer() {
+        if (currentPlayer == Player.WHITE)
+            currentPlayer = Player.BLACK;
+        else
+            currentPlayer = Player.WHITE;
+    }
+
+    private Player changePlayer() {
+        if (currentPlayer == Player.WHITE) return Player.BLACK;
+        return Player.WHITE;
     }
 
     public enum Player {
@@ -524,9 +319,11 @@ public class Board implements Cloneable {
         BLACK;
     }
 
-    private Player changePlayer() {
-        if (currentPlayer == Player.WHITE) return Player.BLACK;
-        return Player.WHITE;
+    private interface Shift {
+        long LEFT_MASK = -9187201950435737472L;
+        long RIGHT_MASK = 72340172838076673L;
+
+        long shift(long position);
     }
 
     public class Stone {
@@ -559,9 +356,7 @@ public class Board implements Cloneable {
 
             Stone stone = (Stone) o;
 
-            if (x != stone.x) return false;
-            if (y != stone.y) return false;
-            return player == stone.player;
+            return x == stone.x && y == stone.y && player == stone.player;
 
         }
 

@@ -1,7 +1,5 @@
 package reversi.alexvashurov.reversi;
 
-import java.util.List;
-
 /**
  * Created by AlexVashurov on 24.03.16.
  */

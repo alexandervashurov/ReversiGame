@@ -9,7 +9,7 @@ import android.widget.TextView;
 
 public class GameActivity extends Activity {
 
-    public final static String TAG = "REVERSI_DEBUG";
+    private final static String TAG = "REVERSI_DEBUG";
 
     private BoardView boardView;
 
@@ -18,7 +18,7 @@ public class GameActivity extends Activity {
     @Override
     public void onCreate(final Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-
+        try {
 
             Log.i(TAG, "game creation started");
             setContentView(R.layout.activity_game);
@@ -26,15 +26,15 @@ public class GameActivity extends Activity {
             Bundle extras = getIntent().getExtras();
 
             boolean playVSComp = (extras != null) && extras.getBoolean("PLAY_VS_COMP", false);
-
             boardView = (BoardView) findViewById(R.id.board);
             scoreText = (TextView) findViewById(R.id.score_text);
             boardView.playVsComputer(playVSComp);
-
-            showScore(2,2);
-
+            showScore(2, 2);
+        } catch (Exception e) {
+            Log.i(TAG, "Game creation " + e.toString());
         }
 
+    }
 
 
     public void showScore(int whiteScore, int blackScore) {

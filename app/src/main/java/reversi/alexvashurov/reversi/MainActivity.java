@@ -2,7 +2,6 @@ package reversi.alexvashurov.reversi;
 
 import android.app.Activity;
 import android.app.AlertDialog;
-import android.app.Dialog;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.os.Bundle;
@@ -14,7 +13,7 @@ import android.widget.Button;
 
 import static reversi.alexvashurov.reversi.Algorithm.setDEPTH;
 public class MainActivity extends Activity {
-    public final static String TAG = "REVERSI_DEBUG";
+    private final static String TAG = "REVERSI_DEBUG";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {

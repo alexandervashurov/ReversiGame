@@ -1,23 +1,16 @@
 package reversi.alexvashurov.reversi;
 
-import android.content.Intent;
-import android.util.Log;
-import android.util.Pair;
-
-import java.util.ArrayList;
-import java.util.Iterator;
+import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
 
 /**
  * Created by AlexVashurov on 30.03.16.
  */
-public class Algorithm {
-    public final static String TAG = "REVERSI_DEBUG";
-
-    private static int DEPTH = 7;
-
+class Algorithm {
+    private final static String TAG = "REVERSI_DEBUG";
     private static final int[][] arrayPositionValues = new int[8][8];
+    private static int DEPTH = 7;
 
     static {
         arrayPositionValues[0][0] = 99;
@@ -76,11 +69,12 @@ public class Algorithm {
 
             scoredMoves.add(new Pair<>(score, move));
 
-            Log.i(TAG, "Move " + move.toString() + " Score " + score);
 
             workBoard = originalBoard;
 
         }
+
+
 
         List<Move> bestMoves = new LinkedList<>();
         int maxScore = 0;
@@ -154,28 +148,57 @@ public class Algorithm {
         return beta;
     }
 
-    public static int score(Board board) {
+    private static int score(Board board) {
         List<Board.Stone> stones = board.getBoardStones();
-        int score = evalPositions(stones, board.getCurrentPlayer());
-        return score;
+        return evalPositions(stones, board.getCurrentPlayer());
     }
 
     private static int evalPositions(List<Board.Stone> stones, Board.Player curentPlayer) {
-        int positionScoreWhite = 0;
-        int positionScoreBlack = 0;
-        int amountScoreWhite = 0;
-        int amountScoreBlack = 0;
 
+        int score = 0;
         for (Board.Stone stone : stones) {
-            if (stone.getPlayer() == curentPlayer) {
-                positionScoreWhite += arrayPositionValues[stone.getX()][stone.getY()];
-                amountScoreWhite++;
-            } else {
-                positionScoreBlack += arrayPositionValues[stone.getX()][stone.getY()];
-                amountScoreBlack++;
-            }
+            if (stone.getPlayer() == curentPlayer)
+                score += arrayPositionValues[stone.getX()][stone.getY()];
+            else
+                score -= arrayPositionValues[stone.getX()][stone.getY()];
         }
-        return (positionScoreWhite - positionScoreBlack) + (amountScoreWhite - amountScoreBlack);
+        return score;
+    }
+
+    public static class Pair<F, S> {
+        public final F first;
+        public final S second;
+
+        public Pair(F first, S second) {
+            this.first = first;
+            this.second = second;
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+
+            Pair<?, ?> pair = (Pair<?, ?>) o;
+
+            return first != null ? first.equals(pair.first) : pair.first == null &&
+                    (second != null ? second.equals(pair.second) : pair.second == null);
+
+        }
+
+        @Override
+        public String toString() {
+            return "first: " + first.toString() +
+                    ", second: " + second.toString() +
+                    '\n';
+        }
+
+        @Override
+        public int hashCode() {
+            int result = first != null ? first.hashCode() : 0;
+            result = 31 * result + (second != null ? second.hashCode() : 0);
+            return result;
+        }
     }
 
 }

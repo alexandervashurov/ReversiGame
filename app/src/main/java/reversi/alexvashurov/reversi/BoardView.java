@@ -21,14 +21,20 @@ import java.util.concurrent.Executors;
 public class BoardView extends View {
 
 
-    public final static String TAG = "REVERSI_DEBUG";
+    private final static String TAG = "REVERSI_DEBUG";
+    private static final int SIZE = 8;
     private final ExecutorService engineExecutor = Executors.newSingleThreadExecutor();
+    private final Rect drawRect = new Rect();
+    private final Paint paintGrid = new Paint();
+    private final GameActivity gameActivity;
+    private boolean isEngineCalculate = false;
+    private Board board;
     private final Runnable engineCalculatingTask = new Runnable() {
         @Override
         public void run() {
 
             Thread.currentThread().setPriority(Thread.MAX_PRIORITY);
-Log.i(TAG,"start calculating");
+            Log.i(TAG, "start calculating");
             Move move = Algorithm.getBetterMove(board);
             if (move == null)
                 return;
@@ -39,41 +45,22 @@ Log.i(TAG,"start calculating");
             engineResultHandler.sendMessage(msg);
         }
     };
+    private final Paint myPaint = new Paint();
+    private final Paint stonePainter = new Paint();
+    private float squareSize = 0;
+    private List<Move> possibleMoves;
+    private Move lastMove = null;
     private final Handler engineResultHandler = new Handler() {
         @Override
         public void handleMessage(Message msg) {
             Bundle bundle = msg.getData();
             long calculatedMove = bundle.getLong("calculatedMove");
             Move move = new Move(calculatedMove);
-            Log.i(TAG,"message handled "+move.toString());
+            Log.i(TAG, "message handled " + move.toString());
 
             enterMove(move);
         }
     };
-
-    private void enterMove(Move move) {
-
-        if (move == null)
-            return;
-
-        isEngineCalculate = false;
-        makeMove(move);
-        invalidate();
-        Log.i(TAG,"calculated move handled");
-    }
-
-    public boolean isEngineCalculate = false;
-
-    private static final int SIZE = 8;
-    private final Rect drawRect = new Rect();
-    private final Paint paintGrid = new Paint();
-    private Board board;
-    private Paint myPaint = new Paint();
-    private Paint stonePainter = new Paint();
-    private float squareSize = 0;
-    private List<Move> possibleMoves;
-    private Move lastMove = null;
-    private final GameActivity gameActivity;
     private boolean playVSComputer = false;
 
     public BoardView(Context context, AttributeSet attrs) {
@@ -89,6 +76,17 @@ Log.i(TAG,"start calculating");
         } catch (Exception e) {
             Log.i(TAG, "board constructing  " + e.toString());
         }
+    }
+
+    private void enterMove(Move move) {
+
+        if (move == null)
+            return;
+
+        isEngineCalculate = false;
+        makeMove(move);
+        invalidate();
+        Log.i(TAG, "calculated move handled");
     }
 
     public void playVsComputer(boolean p) {
@@ -119,6 +117,16 @@ Log.i(TAG,"start calculating");
     }
 
     private void touchHandle(MotionEvent event) {
+
+        if (possibleMoves.isEmpty()) {
+            board.changeCurrentPlayer();
+            possibleMoves = board.getAllPossibleMoves();
+            if (possibleMoves.isEmpty()) {
+                Log.i(TAG, "Game end");
+            }
+            return;
+        }
+
         int x = (int) event.getX();
         int y = (int) event.getY();
 
@@ -224,14 +232,10 @@ Log.i(TAG,"start calculating");
                 } else {
                     stonePainter.setColor(Color.BLACK);
                 }
-
-                canvas.drawOval((int) (squareSize * stone.getX()),
-                        (int) (squareSize * stone.getY()),
-                        (int) (squareSize * (stone.getX() + 1)),
-                        (int) (squareSize * (stone.getY() + 1)),
+                canvas.drawCircle((int) (squareSize * (stone.getX() + 0.5)),
+                        (int) (squareSize * (stone.getY() + 0.5)),
+                        (int) squareSize/2,
                         stonePainter);
-
-
             }
 
 
